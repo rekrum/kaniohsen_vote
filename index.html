@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>カニ王戦５ 優勝予想投票</title>
+  <meta name="description" content="カニ王戦５の優勝予想投票ツールです。的中者の中から抽選で5名にQuoカードをプレゼント！" />
+  <style>
+    :root {
+      --bg:#f7f7fb;
+      --card:#fff;
+      --ink:#222;
+      --muted:#666;
+      --accent:#e95464;
+      --accent-soft:rgba(233,84,100,.14);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Yu Gothic", "Meiryo", sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+    }
+    header {
+      padding: 22px 16px 12px;
+      text-align: center;
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(23px, 5vw, 38px);
+      letter-spacing: .03em;
+    }
+    .lead {
+      margin: 0 auto;
+      max-width: 760px;
+      line-height: 1.75;
+      color: var(--muted);
+    }
+    .campaign {
+      width: min(1120px, calc(100% - 32px));
+      margin: 14px auto 0;
+      padding: 14px 16px;
+      border-radius: 16px;
+      background: #fff2f4;
+      border: 1px solid #ffd3da;
+      text-align: center;
+      font-weight: 700;
+      line-height: 1.6;
+    }
+    main {
+      width: min(1120px, 100%);
+      margin: 0 auto;
+      padding: 16px 16px 34px;
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 20px;
+    }
+    .card {
+      background: var(--card);
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: 0 8px 24px rgba(0,0,0,.08);
+    }
+    h2 {
+      margin: 0 0 12px;
+      font-size: 20px;
+    }
+    .choices {
+      display: grid;
+      gap: 9px;
+    }
+    .choice {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 13px;
+      border: 1px solid #e5e5e5;
+      border-radius: 12px;
+      cursor: pointer;
+      background: #fff;
+      font-weight: 700;
+      transition: .15s ease;
+    }
+    .choice:hover {
+      border-color: #f1a6b0;
+      background: #fffafa;
+    }
+    .choice:has(input:checked) {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-soft);
+      background: #fff7f8;
+    }
+    .choice input {
+      transform: scale(1.2);
+      accent-color: var(--accent);
+    }
+    .preview-wrap {
+      display: grid;
+      gap: 14px;
+    }
+    canvas {
+      width: 100%;
+      height: auto;
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 8px 24px rgba(0,0,0,.08);
+    }
+    .buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    button {
+      appearance: none;
+      border: 0;
+      border-radius: 999px;
+      padding: 12px 18px;
+      font-weight: 800;
+      font-size: 15px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .primary { background: var(--accent); color: #fff; }
+    .secondary { background: #222; color: #fff; }
+    .ghost { background: #eee; color: #222; }
+    .note {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.7;
+      margin: 10px 0 0;
+    }
+    textarea {
+      width: 100%;
+      min-height: 124px;
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid #ddd;
+      font-size: 15px;
+      line-height: 1.6;
+      resize: vertical;
+    }
+    .selected-name {
+      font-size: 16px;
+      line-height: 1.7;
+      background: #f6f6f6;
+      padding: 10px 12px;
+      border-radius: 12px;
+      margin-bottom: 14px;
+    }
+    @media (max-width: 860px) {
+      main { grid-template-columns: 1fr; }
+      .card { padding: 14px; }
+      .buttons button { flex: 1 1 160px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>カニ王戦５ 優勝予想投票</h1>
+    <p class="lead">決勝進出者8名の中から、優勝すると思う選手を1名選んでください。投票画像とX投稿文が自動生成されます。</p>
+  </header>
+
+  <div class="campaign">
+    優勝予想が的中した方の中から、抽選で5名にQuoカードをプレゼント！
+  </div>
+
+  <main>
+    <section class="card">
+      <h2>投票する選手</h2>
+      <div class="selected-name">現在の投票先：<strong id="selectedName"></strong></div>
+      <div id="choices" class="choices"></div>
+      <p class="note">
+        ※参加選手名は運営側で固定しています。投票者側では編集できません。
+      </p>
+    </section>
+
+    <section class="preview-wrap">
+      <canvas id="canvas" width="1748" height="1181"></canvas>
+
+      <div class="card">
+        <h2>X投稿文</h2>
+        <textarea id="postText" readonly></textarea>
+        <div class="buttons">
+          <button class="primary" id="downloadBtn">画像を保存</button>
+          <button class="ghost" id="copyBtn">文章をコピー</button>
+          <button class="secondary" id="shareBtn">Xで投稿する</button>
+          <button class="ghost" id="nativeShareBtn">画像込みで共有</button>
+        </div>
+        <p class="note">
+          PCブラウザでは、X投稿画面に画像を自動添付できないため、「画像を保存」→「Xで投稿する」→投稿画面で画像添付の流れでご利用ください。
+          スマホでは環境によって「画像込みで共有」が使える場合があります。
+        </p>
+      </div>
+    </section>
+  </main>
+
+<script>
+/*
+  ▼ 予選終了後、ここだけ決勝進出者8名に差し替え
+  例：
+  const names = [
+    "レクルム",
+    "こっとにょ",
+    "選手C",
+    "選手D",
+    "選手E",
+    "選手F",
+    "選手G",
+    "選手H"
+  ];
+*/
+const names = [
+  "カニ",
+  "茶碗蒸し",
+  "下剋上くん",
+  "ヒシガニ男",
+  "ふうか☆りん",
+  "出汁",
+  "足長おじさん",
+  "サヨキバード"
+];
+
+let selectedIndex = 0;
+
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+const img = new Image();
+img.src = "template.png";
+
+// 添付画像内の白枠位置
+const whiteBox = { x: 795, y: 353, w: 895, h: 160 };
+
+function currentName() {
+  return names[selectedIndex] || "選手";
+}
+
+function postText() {
+  const name = currentName();
+  return `${name}に投票しました！\n\nあなたの優勝予想は誰ですか？\n的中者の中から抽選で5名にQuoカードをプレゼント！\n\n#カニノケンカ #カニ王戦 #カニ王戦５優勝予想`;
+}
+
+function fitText(text, maxWidth) {
+  let size = 78;
+  while (size > 28) {
+    ctx.font = `700 ${size}px "Noto Sans JP", "Yu Gothic", "Meiryo", sans-serif`;
+    if (ctx.measureText(text).width <= maxWidth) return size;
+    size -= 2;
+  }
+  return size;
+}
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+  const text = currentName();
+  ctx.fillStyle = "#111";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  const size = fitText(text, whiteBox.w - 80);
+  ctx.font = `700 ${size}px "Noto Sans JP", "Yu Gothic", "Meiryo", sans-serif`;
+  ctx.fillText(text, whiteBox.x + whiteBox.w / 2, whiteBox.y + whiteBox.h / 2 + 3);
+
+  document.getElementById("postText").value = postText();
+  document.getElementById("selectedName").textContent = text;
+}
+
+function renderControls() {
+  const choices = document.getElementById("choices");
+  choices.innerHTML = "";
+
+  names.forEach((name, i) => {
+    const label = document.createElement("label");
+    label.className = "choice";
+
+    const radio = document.createElement("input");
+    radio.type = "radio";
+    radio.name = "vote";
+    radio.value = i;
+    radio.checked = i === selectedIndex;
+    radio.addEventListener("change", () => {
+      selectedIndex = i;
+      renderControls();
+      draw();
+    });
+
+    const span = document.createElement("span");
+    span.textContent = name;
+
+    label.appendChild(radio);
+    label.appendChild(span);
+    choices.appendChild(label);
+  });
+}
+
+function canvasBlob() {
+  return new Promise(resolve => canvas.toBlob(resolve, "image/png", 0.95));
+}
+
+document.getElementById("downloadBtn").addEventListener("click", async () => {
+  const blob = await canvasBlob();
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `kanioh5_vote_${currentName()}.png`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+
+document.getElementById("copyBtn").addEventListener("click", async () => {
+  await navigator.clipboard.writeText(postText());
+  alert("投稿文をコピーしました");
+});
+
+document.getElementById("shareBtn").addEventListener("click", () => {
+  const url = "https://twitter.com/intent/tweet?text=" + encodeURIComponent(postText());
+  window.open(url, "_blank", "noopener,noreferrer");
+});
+
+document.getElementById("nativeShareBtn").addEventListener("click", async () => {
+  const blob = await canvasBlob();
+  const file = new File([blob], `kanioh5_vote_${currentName()}.png`, { type: "image/png" });
+
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    await navigator.share({ text: postText(), files: [file] });
+  } else {
+    alert("この端末・ブラウザでは画像込み共有に対応していません。画像保存→X投稿画面で添付してください。");
+  }
+});
+
+img.onload = () => {
+  renderControls();
+  draw();
+};
+</script>
+</body>
+</html>
